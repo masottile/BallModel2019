@@ -1,11 +1,11 @@
-const int sonarEchoPin = 10;
+const int sonarEchoPin = 11;
 const int sonarTrigPin = 9;
-const int solenoidSignal = 8;
+const int solenoidSignal = 6;
 const int laserPin = A5;
 
-const int laserThreshold = 200;
-const int maxDistance = 10;
-const int timeConstant = 500;
+const int laserThreshold = 5;
+const int maxDistance = 100;
+const int timeConstant = 600;
 
 long duration;
 int distance;
@@ -15,26 +15,39 @@ int count;
 void setup() {
   pinMode(sonarTrigPin, OUTPUT); // Sets the sonarTrigPin as an Output
   pinMode(sonarEchoPin, INPUT); // Sets the sonarEchoPin as an Input
-  pinMode(solenoidSignal, INPUT);
-  pinMode(A5, INPUT);
+  pinMode(solenoidSignal, OUTPUT); // Output pin for signal to relay
+  pinMode(A5, INPUT); // Analog input from laser 
 
+  digitalWrite(solenoidSignal, LOW); // make sure that valve is closed
   Serial.begin(9600); // Starts the serial communication
 }
 
 void loop() {
-
-  distance = sonarSignal();
+  
+  digitalWrite(solenoidSignal, LOW); // make sure that valve is closed
+  distance = sonarSignal(); 
   laserHit = analogRead(laserPin) > laserThreshold ? true : false;
 
-  if (distance < maxDistance && laserHit == true) { // instance of cup + laser hit
+  if (distance < maxDistance && laserHit == true) { // instance of triggering
     count = 0;
-    digitalWrite(solenoidSignal, HIGH); // RELEASE THE KRAKEN
+    digitalWrite(solenoidSignal, HIGH); 
+    Serial.println("We're on!"); 
     
-    while (sonarSignal() < maxDistance && count < timeConstant) { // as long as cup is still there and we're not overtime, 
+    while (sonarSignal() < maxDistance && count < timeConstant) { // as long as cup is still there + time hasnt't been too long
+      Serial.println("Still goin'"); 
       delay(5);
       count++;
     }
-    digitalWrite(solenoidSignal, LOW);
+
+    Serial.println("Done!");
+    digitalWrite(solenoidSignal, LOW); // close valve
+    delay(15000); // wait a while to start looking again
+    Serial.println("Starting over!");
+/*
+    while(sonarSignal() < maxDistance){
+      Serial.println("WE ARE IN THE LOOP!");
+      delay(5);
+    }*/
   }
 }
 
@@ -46,5 +59,5 @@ int sonarSignal() {
   delayMicroseconds(10);
   digitalWrite(sonarTrigPin, LOW);
   duration = pulseIn(sonarEchoPin, HIGH);
-  return duration * 0.034 / 2; // in cm
+  return duration * 0.34/2; // in mm
 }
